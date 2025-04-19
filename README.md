@@ -53,7 +53,6 @@ dataset
 ```
 
 
-We construct a large-scale emotional description dataset MER-Caption, which 
 
 <p><img src="AffectGPT/assert/dataset.png" width="800" "/></p>
 
