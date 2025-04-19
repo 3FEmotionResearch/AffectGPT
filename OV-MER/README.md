@@ -163,7 +163,7 @@ Since the emotion labels extracted in different runs are slightly different, the
 
 ## 📑 Citation
 
-If you find AffectGPT useful for your research and applications, please cite using this BibTeX:
+If you find OV-MER useful for your research and applications, please cite using this BibTeX:
 ```bibtex
 @article{lian2024ov,
   title={OV-MER: Towards Open-Vocabulary Multimodal Emotion Recognition},
