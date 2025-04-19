@@ -10,7 +10,7 @@ AffectGPT</a></h3>
 <h5 align="center">
 
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-yellow)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-yellow)](AffectGPT/LICENSE)
 </h5>
 
 ## ✨ OV-MER Task
