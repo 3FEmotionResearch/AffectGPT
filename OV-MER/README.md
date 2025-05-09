@@ -168,7 +168,7 @@ If you find OV-MER useful for your research and applications, please cite using 
 @article{lian2024ov,
   title={OV-MER: Towards Open-Vocabulary Multimodal Emotion Recognition},
   author={Zheng Lian, Haiyang Sun, Licai Sun, Haoyu Chen, Lan Chen, Hao Gu, Zhuofan Wen, Shun Chen, Siyuan Zhang, Hailiang Yao, Bin Liu, Rui Liu, Shan Liang, Ya Li, Jiangyan Yi, Jianhua Tao},
-  journal={arXiv preprint arXiv:2410.01495},
+  journal={ICML},
   year={2024}
 }
 ```
