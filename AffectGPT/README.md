@@ -100,6 +100,7 @@ dataset
 |:----------------|:------------:|
 | [emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_lz](https://pan.baidu.com/s/1wtKBxHQP4eCUSAVuBrOzag?pwd=27sh)  | Training on **MERCaption+** and take pre-extracted **face** as input  |
 
+Meanwhile, we provide an alternate download link on Hugging Face: https://huggingface.co/MERChallenge/AffectGPT
 
 ## 🗝️ Training & Inference
 
