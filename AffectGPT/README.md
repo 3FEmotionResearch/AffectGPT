@@ -229,6 +229,8 @@ CUDA_VISIBLE_DEVICES=0 python -u inference_sample.py --zeroshot
 --outside_user_message="Please infer the person's emotional state and provide your reasoning process."
 --cfg-path=train_configs/mercaptionplus_outputhybird_bestsetup_bestfusion_frame_lz.yaml 
 --options "inference.test_epoch=30"
+
+# For the above code, the output description should begin with "In the text", otherwise your inference code or downloaded model may contain errors.
 ```
 
 ## 📑 Citation
