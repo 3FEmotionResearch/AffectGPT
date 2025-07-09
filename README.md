@@ -125,7 +125,7 @@ If you find AffectGPT useful for your research and applications, please cite usi
 @article{lian2025affectgpt,
   title={AffectGPT: A New Dataset, Model, and Benchmark for Emotion Understanding with Multimodal Large Language Models},
   author={Lian, Zheng and Chen, Haoyu and Chen, Lan and Sun, Haiyang and Sun, Licai and Ren, Yong and Cheng, Zebang and Liu, Bin and Liu, Rui and Peng, Xiaojiang and others},
-  journal={ICML (Spotlight)},
+  journal={ICML (Oral)},
   year={2025}
 }
 
