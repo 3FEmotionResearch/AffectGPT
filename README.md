@@ -25,7 +25,7 @@ AffectGPT</a></h3>
 
 ## 🚀 Dataset
 
-### OV-MERD
+### OV-MERD (Formerly known as the EMER dataset)
 It is the first dataset we construct for the OV-MER task. This dataset is available at: https://huggingface.co/datasets/MERChallenge/MER2025
 ```bash
 dataset
