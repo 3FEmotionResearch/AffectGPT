@@ -1,26 +1,32 @@
 channels:
-  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=5.1=1_gnu
   - bzip2=1.0.8=h5eee18b_6
   - ca-certificates=2024.9.24=h06a4308_0
+  - expat=2.7.1=h6a678d5_0
   - ld_impl_linux-64=2.40=h12ee557_0
   - libffi=3.4.4=h6a678d5_1
   - libgcc-ng=11.2.0=h1234567_1
   - libgomp=11.2.0=h1234567_1
   - libstdcxx-ng=11.2.0=h1234567_1
   - libuuid=1.41.5=h5eee18b_0
+  - libxcb=1.17.0=h9b100fa_0
   - ncurses=6.4=h6a678d5_0
   - openssl=3.0.15=h5eee18b_0
   - pip=24.2=py310h06a4308_0
+  - pthread-stubs=0.3=h0ce48e5_1
   - python=3.10.15=he870216_1
   - readline=8.2=h5eee18b_0
   - setuptools=75.1.0=py310h06a4308_0
   - sqlite=3.45.3=h5eee18b_0
   - tk=8.6.14=h39e8969_0
   - wheel=0.44.0=py310h06a4308_0
+  - xorg-libx11=1.8.12=h9b100fa_1
+  - xorg-libxau=1.0.12=h9b100fa_0
+  - xorg-libxdmcp=1.1.5=h9b100fa_0
+  - xorg-xorgproto=2024.1=h5eee18b_1
   - xz=5.4.6=h5eee18b_1
   - zlib=1.2.13=h5eee18b_1
   - pip:
@@ -102,6 +108,7 @@ dependencies:
       - h11==0.14.0
       - h5py==3.13.0
       - hf-transfer==0.1.9
+      - hf-xet==1.1.5
       - httpcore==1.0.6
       - httptools==0.6.1
       - httpx==0.27.2
@@ -161,7 +168,7 @@ dependencies:
       - note-seq==0.0.5
       - numba==0.60.0
       - numcodecs==0.13.1
-      - numpy
+      - numpy==1.26.4
       - nvidia-cublas-cu12==12.1.3.1
       - nvidia-cuda-cupti-cu12==12.1.105
       - nvidia-cuda-nvrtc-cu12==12.1.105
@@ -234,6 +241,7 @@ dependencies:
       - pycryptodome==3.22.0
       - pydantic==2.9.2
       - pydantic-core==2.23.4
+      - pydantic-extra-types==2.10.5
       - pydub==0.25.1
       - pyerfa==2.0.1.4
       - pygments==2.18.0
@@ -246,6 +254,7 @@ dependencies:
       - python-multipart==0.0.20
       - python-speech-features==0.6
       - pytorch-lightning==2.5.0.post0
+      - pytorchvideo==0.1.5
       - pytz==2024.2
       - pyworld==0.3.5
       - pyyaml==6.0.2
@@ -295,7 +304,10 @@ dependencies:
       - tomli==2.2.1
       - tomlkit==0.13.2
       - tool-helpers==0.1.2
+      - torch==2.4.0+cu121
+      - torchaudio==2.4.0+cu121
       - torchmetrics==1.6.1
+      - torchvision==0.19.0+cu121
       - tornado==6.4.2
       - tqdm==4.66.5
       - traitlets==5.14.3
@@ -307,12 +319,14 @@ dependencies:
       - typeguard==2.13.3
       - typer==0.15.1
       - typing-extensions==4.12.2
+      - typing-inspection==0.4.1
       - tzdata==2024.2
       - urllib3==1.26.20
       - uvicorn==0.31.0
       - uvloop==0.20.0
       - visualdl==2.5.3
       - vllm==0.6.2
+      - vllm-flash-attn==2.6.1
       - watchfiles==0.24.0
       - wcwidth==0.2.13
       - webdataset==0.2.100

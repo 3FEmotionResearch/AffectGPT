@@ -108,6 +108,7 @@ def get_name2cls(dataset):
     if dataset == 'SIMS':             return SIMS_Dataset()
     if dataset == 'SIMSv2':           return SIMSv2_Dataset()
     if dataset == 'MER2025OV':        return MER2025OV_Dataset()
+    if dataset == 'MERCaptionPlus':   return MERCaptionPlus_Dataset()
     print ('dataset cls not provided!')
     return None
 
