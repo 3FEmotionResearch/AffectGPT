@@ -52,7 +52,7 @@ datasets:
 
   mercaptionplus:
     data_type: video
-    face_or_frame: 'multiface_audio_face_text' # 默认是读取 frame or face
+    face_or_frame: 'frame' # 默认是读取 frame or face
     label_type: 'hybird' # 模型是预测 description 还是 label 呢？
 
 

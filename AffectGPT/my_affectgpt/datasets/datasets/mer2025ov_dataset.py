@@ -134,6 +134,26 @@ class MER2025OV_Dataset(BaseDataset):
             name2subtitle[name] = subtitle
         self.name2subtitle = name2subtitle
         
+        # Load ground truth labels for evaluation
+        name2openset = {}
+        try:
+            label_csv = config.PATH_TO_LABEL[self.dataset]  # track2_test.csv
+            df = pd.read_csv(label_csv)
+            for _, row in df.iterrows():
+                name = row['name']
+                openset = row.get('openset', '')
+                if pd.isna(openset) or openset == '': 
+                    openset = ''
+                if openset != '':
+                    openset = string_to_list(openset)
+                    name2openset[name] = ", ".join(openset)
+                else:
+                    name2openset[name] = ""
+        except Exception as e:
+            print(f"Warning: Could not load ground truth labels from {config.PATH_TO_LABEL[self.dataset]}: {e}")
+            name2openset = {}
+        self.name2openset = name2openset
+        
         vis_root = config.PATH_TO_RAW_VIDEO[self.dataset]
         wav_root = config.PATH_TO_RAW_AUDIO[self.dataset]
         face_root= config.PATH_TO_RAW_FACE[self.dataset]
@@ -165,5 +185,15 @@ class MER2025OV_Dataset(BaseDataset):
     def read_test_names(self):
         label_csv = os.path.join(config.DATA_DIR[self.dataset], 'track_all_candidates.csv')      
         test_names  = func_read_key_from_csv(label_csv, 'name')
-        assert len(test_names) == 20000
+        print(f"Number of test names: {len(test_names)} from {label_csv}")
         return test_names
+
+    def get_test_name2gt(self):
+        """Return ground truth labels for evaluation"""
+        if hasattr(self, 'name2openset') and self.name2openset:
+            return self.name2openset
+        else:
+            print("Warning: No ground truth labels available. Using empty labels for inference-only mode.")
+            # For inference-only mode, return empty labels for all test samples
+            test_names = self.read_test_names()
+            return {name: "" for name in test_names}

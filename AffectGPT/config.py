@@ -11,16 +11,16 @@ RESULT_ROOT = os.path.join(AFFECTGPT_ROOT, 'output/results')
 ## 所有模型的存储路径
 #######################
 PATH_TO_LLM = {
-    'Qwen25': 'models/Qwen2.5-7B-Instruct',
+    'Qwen25': 'Qwen/Qwen2.5-7B-Instruct',
 }
 
 PATH_TO_VISUAL = {
-    'CLIP_VIT_LARGE': 'models/clip-vit-large-patch14',
+    'CLIP_VIT_LARGE': 'openai/clip-vit-large-patch14',
 
 }
 
 PATH_TO_AUDIO = {
-    'HUBERT_LARGE':  'models/chinese-hubert-large',
+    'HUBERT_LARGE':  'TencentGameMate/chinese-hubert-large',
 }
 
 
@@ -93,8 +93,9 @@ PATH_TO_TRANSCRIPTIONS = {
     'SIMSv2': os.path.join(DATA_DIR['SIMSv2'], 'transcription-engchi-polish.csv'),
     'MER2024': os.path.join(DATA_DIR['MER2024'], 'transcription_merge.csv'),
 }
+# PATH_TO_LABEL is used for evaluation, those are the ground truth labels.
 PATH_TO_LABEL = {
-    'MER2025OV':  os.path.join(DATA_DIR['MER2025OV'], 'track2_test.csv'),
+    'MER2025OV':  os.path.join(DATA_DIR['MER2025OV'], 'track2_train_mercaptionplus.csv'),
     'MERCaptionPlus':  os.path.join(DATA_DIR['MERCaptionPlus'], 'xxx'),
     'OVMERD':  os.path.join(DATA_DIR['OVMERD'], 'xxx'),
     'MER2023': os.path.join(DATA_DIR['MER2023'], 'label-6way.npz'),
