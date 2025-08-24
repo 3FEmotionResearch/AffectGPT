@@ -28,6 +28,76 @@ import config
 from toolkit.utils.read_files import *
 
 
+# ===== Attention blocking helpers (Image/Text -> Last) =====
+def _set_block_attn_hooks_llama(llama_model, from_to_index_per_layer, opposite=False):
+    """Wrap each layer's self_attn.forward to inject an additive attention_mask that blocks specified (row,col).
+
+    - rows: query positions (TO)
+    - cols: key positions (FROM)
+    """
+    def wrap_attn_forward(forward_fn, module_with_dtype, from_to_index_, opposite_):
+        def wrapper_fn(*args, **kwargs):
+            new_args = list(args)
+            new_kwargs = dict(kwargs)
+
+            # Determine current sequence lengths
+            # hidden_states: [bsz, q_len, hidden]; position_ids: [bsz, seq_len]
+            hidden_states = kwargs["hidden_states"]
+            q_length = hidden_states.size(1)
+            position_ids = kwargs.get("position_ids", None)
+            if position_ids is not None:
+                num_tokens = position_ids[0, -1].item() + 1
+            else:
+                num_tokens = q_length
+
+            # Map pairs for decode-time (q_length==1)
+            if q_length == 1:
+                from_to_index = [(0, c) for _, c in from_to_index_] if from_to_index_ else []
+            else:
+                from_to_index = from_to_index_
+
+            # Build base causal mask (1=allow, 0=block)
+            device = hidden_states.device
+            if q_length == 1:
+                attn_mask = torch.ones((1, 1, q_length, num_tokens), dtype=torch.uint8, device=device)
+            else:
+                tril = torch.tril(torch.ones((q_length, num_tokens), dtype=torch.uint8, device=device))
+                attn_mask = tril.view(1, 1, q_length, num_tokens)
+
+            if from_to_index:
+                rows, cols = zip(*from_to_index)
+                if opposite_:
+                    # Keep only these pairs
+                    attn_mask[:] = 0
+                    attn_mask[0, 0, list(rows), list(cols)] = 1
+                else:
+                    # Block these pairs
+                    attn_mask[0, 0, list(rows), list(cols)] = 0
+
+            # Convert to additive mask
+            dtype = hidden_states.dtype
+            attn_mask = attn_mask.to(dtype=dtype)
+            attn_mask = (1.0 - attn_mask) * torch.finfo(dtype).min
+            new_kwargs["attention_mask"] = attn_mask
+            return forward_fn(*new_args, **new_kwargs)
+
+        return wrapper_fn
+
+    hooks = []
+    # peft may wrap the model; layers path used elsewhere: .model.model.layers
+    layers = llama_model.model.model.layers
+    for i in from_to_index_per_layer.keys():
+        orig_forward = layers[i].self_attn.forward
+        layers[i].self_attn.forward = wrap_attn_forward(orig_forward, llama_model, from_to_index_per_layer[i], opposite)
+        hooks.append((i, orig_forward))
+    return hooks
+
+
+def _remove_block_attn_hooks_llama(llama_model, hooks):
+    layers = llama_model.model.model.layers
+    for i, orig_forward in hooks:
+        layers[i].self_attn.forward = orig_forward
+
 # 采用的是这个文件下存储数量最多的 root
 def search_for_ckpt_root(root_candidates):
     if len(root_candidates) == 0:
@@ -130,6 +200,7 @@ if __name__ == "__main__":
     parser.add_argument('--zeroshot', action='store_true', default=False, help='whether testing on zeroshot performance?')
     parser.add_argument('--outside_user_message',  default=None, help="we use the outside user message, rather than dataset dependent.")
     parser.add_argument('--outside_face_or_frame', default=None, help="we use the outside face_or_frame, rather than dataset dependent.")
+    parser.add_argument('--block_description', default=None, help='Support: "Image->Last" or "Subtitle->Last"')
     args = parser.parse_args()
     cfg = Config(args)
     model_cfg = cfg.model_cfg
@@ -137,7 +208,6 @@ if __name__ == "__main__":
     inference_cfg = cfg.inference_cfg
     device = 'cuda:{}'.format(inference_cfg.gpu)
     inference_datasets = ['MER2023', 'MER2024', 'MELD', 'IEMOCAPFour', 'CMUMOSI', 'CMUMOSEI', 'SIMS', 'SIMSv2']
-    
 
     print ('======== Step1: cfg pre-analysis ========')
     # 支持 ckpt_root / ckpt_name 两种类型输入 => (ckpt3_root)
@@ -166,7 +236,6 @@ if __name__ == "__main__":
     print (f'Read data type: {face_or_frame}')
     print ('=======================================')
 
-
     ## main process for each ckpt3 candidates
     for ii, ckpt_3 in enumerate(whole_ckpt3s):
 
@@ -182,7 +251,6 @@ if __name__ == "__main__":
         model = model.to(device).eval() # !! reduce randomness during the inference
         chat = Chat(model, model_cfg, device=device)
         ##############################################################
-
 
         print ('======== Step3: Inferece ========')
         if args.dataset == 'inferenceData':
@@ -208,7 +276,6 @@ if __name__ == "__main__":
                 dataset_cls.img_processor = registry.get_processor_class(img_processor_cfg.train.name).from_config(img_processor_cfg.train)
             dataset_cls.n_frms = model_cfg.vis_processor.train.n_frms
 
-
             ## 读取每个数据集的内容
             test_names = dataset_cls.read_test_names()
             name2subtitle = dataset_cls.name2subtitle
@@ -218,14 +285,23 @@ if __name__ == "__main__":
                                     os.path.basename(ckpt3_root)) 
             if not os.path.exists(save_root): os.makedirs(save_root)
             epoch = os.path.basename(cfg.model_cfg.ckpt_3)[:-4]
-            save_path = '%s/%s.npz' %(save_root, epoch) # output/result-{dataset}/ckpt3_name/epochname
+            # include block_description to avoid skipping different runs
+            block_desc_tag = (
+                "no-block"
+                if (getattr(args, "block_description", None) in [None, "", "xxx"])
+                else "block-"
+                + getattr(args, "block_description")
+                .replace(" ", "_")
+                .replace("->", "-to-")
+            )
+            save_path = '%s/%s_%s.npz' %(save_root, epoch, block_desc_tag) # output/result-{dataset}/ckpt3_name/epoch__block
             if os.path.exists(save_path): continue
 
             ## 主要处理函数 【费时的主要在这个部分】
             name2reason = {}
             for ii, name in enumerate(test_names):
                 subtitle = name2subtitle[name]
-                print (f'process on {ii}|{len(test_names)}: {name} | {subtitle}')
+                print (f'process on {ii + 1}|{len(test_names)}: {name} | {subtitle}')
 
                 # 转成 cls 里面的支持类型进行 path 读取
                 sample = {'name': name}
@@ -258,11 +334,57 @@ if __name__ == "__main__":
                 # get prompt (if use zeroshot => ov labels; else => dataset specific question)
                 user_message = get_user_message(dataset_cls, args.zeroshot, args.outside_user_message)
                 prompt = dataset_cls.get_prompt_for_multimodal(face_or_frame, subtitle, user_message)
-                
+
                 # => call function
-                response = chat.answer_sample(prompt=prompt, img_list=img_list,
-                                            num_beams=1, temperature=1, do_sample=True, top_p=0.9, 
-                                            max_new_tokens=1200, max_length=2000) # llama: max_token_num=2048
+                max_new_tokens = 1200
+                max_length = 2000
+
+                hooks = None
+                if args.block_description in ["Image->Last", "Subtitle->Last"]:
+                    # Prepare prompt as in Chat to align token indices
+                    prepared_prompt = chat.replace_token_for_multimodal(prompt)
+                    full_ids = chat.to_token_ids(prepared_prompt, max_length)
+
+                    # Trim like Chat.answer_sample
+                    current_max_len = len(full_ids) + max_new_tokens
+                    begin_idx = max(0, current_max_len - max_length)
+                    trimmed_ids = full_ids[begin_idx:]
+
+                    # Compute FROM indices
+                    if args.block_description.startswith("Image->"):
+                        IMAGE_PATCH_TOKEN_ID = chat.tokenizer.get_vocab()[config.DEFAULT_IMAGE_PATCH_TOKEN]
+                        mask_idx = torch.where(trimmed_ids == IMAGE_PATCH_TOKEN_ID)[0]
+                        from_indices = mask_idx.tolist()
+                    else:
+                        # Subtitle tokens: locate the subtitle string inside the prepared prompt and block only that span
+                        def enc(s):
+                            return chat.tokenizer.encode(s, add_special_tokens=False)
+                        seq_list = trimmed_ids.tolist()
+                        sub_ids = enc(subtitle)
+                        from_indices = []
+                        if len(sub_ids) > 0:
+                            for i in range(0, max(0, len(seq_list) - len(sub_ids) + 1)):
+                                if seq_list[i:i+len(sub_ids)] == sub_ids:
+                                    from_indices = list(range(i, i + len(sub_ids)))
+                            # If multiple matches, pick the last occurrence (prompt usually places subtitle once)
+
+                    # TO is Last (index of last prompt token)
+                    to_indices = [len(trimmed_ids) - 1] if len(trimmed_ids) > 0 else []
+
+                    if len(from_indices) > 0 and len(to_indices) == 1:
+                        pairs = [(to_indices[0], c) for c in from_indices]
+                        # apply to all layers
+                        num_layers = len(chat.model.llama_model.model.model.layers)
+                        block_config = {l: pairs for l in range(num_layers)}
+                        hooks = _set_block_attn_hooks_llama(chat.model.llama_model, block_config)
+
+                try:
+                    response = chat.answer_sample(prompt=prompt, img_list=img_list,
+                                                num_beams=1, temperature=0.001, do_sample=True, top_p=0.9, 
+                                                max_new_tokens=max_new_tokens, max_length=max_length) # llama: max_token_num=2048
+                finally:
+                    if hooks is not None:
+                        _remove_block_attn_hooks_llama(chat.model.llama_model, hooks)
                 name2reason[name] = response
                 print (response)
 

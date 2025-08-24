@@ -31,6 +31,12 @@ AffectGPT/output/emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_l
 ```
 CUDA_VISIBLE_DEVICES=0 python -u inference_hybird.py --zeroshot --dataset='MER2025OV' --cfg-path=train_configs/emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_lz.yaml --options "inference.test_epoch=60"
 ```
+```
+CUDA_VISIBLE_DEVICES=0 python -u inference_hybird.py --zeroshot --dataset='MER2025OV' --cfg-path=train_configs/emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_lz.yaml --options "inference.test_epoch=60" --block_description "Image->Last"
+```
+```
+CUDA_VISIBLE_DEVICES=0 python -u inference_hybird.py --zeroshot --dataset='MER2025OV' --cfg-path=train_configs/emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_lz.yaml --options "inference.test_epoch=60" --block_description "Subtitle->Last"
+```
 
 # Run evaluation on inference result. Check `AffectGPT/evaluation-scoreonly-my.py`.
 
