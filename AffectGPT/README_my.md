@@ -29,13 +29,13 @@ AffectGPT/output/emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_l
 
 # Run inference on dataset. More can check `README.md`.
 ```
-CUDA_VISIBLE_DEVICES=0 python -u inference_hybird.py --zeroshot --dataset='MER2025OV' --cfg-path=train_configs/emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_lz.yaml --options "inference.test_epoch=60"
+CUDA_VISIBLE_DEVICES=0 python -u inference_hybird.py --zeroshot --dataset='MER2025OV' --cfg-path=train_configs/emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_lz.yaml --options "inference.test_epoch=60" --ask_reasoning
 ```
 ```
-CUDA_VISIBLE_DEVICES=0 python -u inference_hybird.py --zeroshot --dataset='MER2025OV' --cfg-path=train_configs/emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_lz.yaml --options "inference.test_epoch=60" --block_description "Image->Last"
+CUDA_VISIBLE_DEVICES=0 python -u inference_hybird.py --zeroshot --dataset='MER2025OV' --cfg-path=train_configs/emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_lz.yaml --options "inference.test_epoch=60" --ask_reasoning --block_description "Image->Last"
 ```
 ```
-CUDA_VISIBLE_DEVICES=0 python -u inference_hybird.py --zeroshot --dataset='MER2025OV' --cfg-path=train_configs/emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_lz.yaml --options "inference.test_epoch=60" --block_description "Subtitle->Last"
+CUDA_VISIBLE_DEVICES=0 python -u inference_hybird.py --zeroshot --dataset='MER2025OV' --cfg-path=train_configs/emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_lz.yaml --options "inference.test_epoch=60" --ask_reasoning --block_description "Subtitle->Last"
 ```
 
 # Run evaluation on inference result. Check `AffectGPT/evaluation-scoreonly-my.py`.
