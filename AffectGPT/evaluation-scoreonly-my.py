@@ -1,6 +1,15 @@
 '''
 cd AffectGPT
-CUDA_VISIBLE_DEVICES=0 python evaluation-scoreonly-my.py
+CUDA_VISIBLE_DEVICES=0 python evaluation-scoreonly-my.py --file $output_file_npz
+
+Diffs with AffectGPT/evaluation-scoreonly.py:
+* Changed Step 1 (evaluation) flow
+ Replaced the commented multi-model/multi-dataset loop with a single targeted run:
+  Defines modelname_with_timestamp = 'emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_lz_20250110100'
+  Prints a status line: “Evaluating results for: …”
+  Calls main_zeroshot_scores on output/results-mer2025ov/{modelname_with_timestamp} (note the new results-mer2025ov path).
+* Step 2 (results summary) disabled
+ The loop that called func_return_scores_one and printed per-dataset summaries is now fully commented out, with a note that it expects a specific format.
 '''
 import os
 import re
@@ -201,13 +210,16 @@ def calculate_dimension_zeroshot(epoch_root, name2gt, llm, tokenizer, sampling_p
 
 def main_zeroshot_scores(input_dir, debug=False, test_epochs='', inter_print=True):
 
-    # ## 如果 input_dir 不存在的话，那么需要去检索最匹配的路径
-    if not os.path.exists(input_dir):
-        input_dir = search_for_result_root(input_dir, inter_print)
-    if inter_print: print (f'process root: {input_dir}')
+    # 支持传入目录或单个 .npz 文件
+    input_path = input_dir
 
-    # read dataset infos
-    dataset = func_read_datasetname(input_dir)
+    # ## 如果路径不存在的话，那么需要去检索最匹配的路径（仅目录适用）
+    if not os.path.exists(input_path):
+        input_path = search_for_result_root(input_path, inter_print)
+    if inter_print: print (f'process root: {input_path}')
+
+    # read dataset infos（文件路径同样包含 /results- 前缀，解析无影响）
+    dataset = func_read_datasetname(input_path)
     disordim_flag = get_discrete_or_dimension_flag(dataset)
     if inter_print: print (f'process dataset: {dataset} => {disordim_flag}')
     dataset_cls = get_dataset2cls(dataset)
@@ -231,7 +243,14 @@ def main_zeroshot_scores(input_dir, debug=False, test_epochs='', inter_print=Tru
     
     # main process
     whole_score1s, whole_score2s, whole_score3s = [], [], []
-    for epoch_root in sorted(glob.glob(input_dir + '/*.npz')):
+    # 构建评估文件列表：如果传入单个文件则只评估该文件，否则评估目录下全部 .npz
+    files_to_eval = []
+    if os.path.isfile(input_path) and input_path.endswith('.npz'):
+        files_to_eval = [input_path]
+    else:
+        files_to_eval = sorted(glob.glob(os.path.join(input_path, '*.npz')))
+
+    for epoch_root in files_to_eval:
 
         if epoch_root.find('openset') != -1 or epoch_root.find('sentiment') != -1:
             continue
@@ -270,6 +289,9 @@ def main_zeroshot_scores(input_dir, debug=False, test_epochs='', inter_print=Tru
         if inter_print: print ('=========================')
 
     # whole_score1s => main metric
+    if len(whole_score1s) == 0:
+        if inter_print: print('No eligible .npz files found to evaluate.')
+        return 0, 0, 0
     best_index = np.argmax(whole_score1s)
     best_score1 = whole_score1s[best_index]
     best_score2 = whole_score2s[best_index]
@@ -308,13 +330,21 @@ def func_return_scores_one(modelname=None, dataset_candidates='affectgpt'):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(description='Evaluate AffectGPT result files')
+    parser.add_argument('--file', type=str, default='', help='Path to a single .npz result file to evaluate')
+    args = parser.parse_args()
+
     # ## step1：测试新模型下的结果
     modelname_with_timestamp = 'emercoarse_highlevelfilter4_outputhybird_bestsetup_bestfusion_lz_20250110100'
-    
-    # Evaluate MER2025OV results
-    print(f"Evaluating results for: {modelname_with_timestamp}")
-    main_zeroshot_scores(f"output/results-mer2025ov/{modelname_with_timestamp}")
 
+    if args.file:
+        target = args.file
+        print(f"Evaluating single result file: {target}")
+        main_zeroshot_scores(target)
+    else:
+        # Evaluate MER2025OV results
+        print(f"Evaluating results for: {modelname_with_timestamp}")
+        main_zeroshot_scores(f"output/results-mer2025ov/{modelname_with_timestamp}")
 
     # ## step2: 结果汇总展示 (commented out as it expects specific format)
     # for modelname in [
