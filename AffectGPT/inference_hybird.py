@@ -184,11 +184,16 @@ def get_name2cls(dataset):
 
 
 # 优先级：zeroshot > dataset specific
-def get_user_message(dataset_cls, zeroshot, outside_user_message):
+def get_user_message(dataset_cls, zeroshot, outside_user_message, ask_reasoning):
     if outside_user_message is not None:
         user_message = outside_user_message
     elif zeroshot: # predict ov labels
-        user_message = dataset_cls.func_get_qa_ovlabel(sample=None, question_only=True)
+        if ask_reasoning:
+            user_message = dataset_cls.func_get_qa_description(sample=None, question_only=True)
+        else:
+            user_message = dataset_cls.func_get_qa_ovlabel(sample=None, question_only=True)
+    else:
+        user_message = None
     return user_message
 
 
@@ -201,6 +206,7 @@ if __name__ == "__main__":
     parser.add_argument('--outside_user_message',  default=None, help="we use the outside user message, rather than dataset dependent.")
     parser.add_argument('--outside_face_or_frame', default=None, help="we use the outside face_or_frame, rather than dataset dependent.")
     parser.add_argument('--block_description', default=None, help='Support: "Image->Last" or "Subtitle->Last"')
+    parser.add_argument('--ask_reasoning', action='store_true', default=False, help='Ask model to provide reasoning in zeroshot prompts')
     args = parser.parse_args()
     cfg = Config(args)
     model_cfg = cfg.model_cfg
@@ -294,7 +300,9 @@ if __name__ == "__main__":
                 .replace(" ", "_")
                 .replace("->", "-to-")
             )
-            save_path = '%s/%s_%s.npz' %(save_root, epoch, block_desc_tag) # output/result-{dataset}/ckpt3_name/epoch__block
+            # Tag whether the output includes reasoning or labels only
+            output_tag = "output-reason" if args.ask_reasoning else "output-label"
+            save_path = '%s/%s_%s_%s.npz' %(save_root, epoch, output_tag, block_desc_tag) # output/result-{dataset}/ckpt3_name/epoch__outputtag__block
             if os.path.exists(save_path): continue
 
             ## 主要处理函数 【费时的主要在这个部分】
@@ -332,7 +340,7 @@ if __name__ == "__main__":
                 img_list['multi'] = multi_llms
 
                 # get prompt (if use zeroshot => ov labels; else => dataset specific question)
-                user_message = get_user_message(dataset_cls, args.zeroshot, args.outside_user_message)
+                user_message = get_user_message(dataset_cls, args.zeroshot, args.outside_user_message, args.ask_reasoning)
                 prompt = dataset_cls.get_prompt_for_multimodal(face_or_frame, subtitle, user_message)
 
                 # => call function
@@ -380,7 +388,7 @@ if __name__ == "__main__":
 
                 try:
                     response = chat.answer_sample(prompt=prompt, img_list=img_list,
-                                                num_beams=1, temperature=0.001, do_sample=True, top_p=0.9, 
+                                                num_beams=1, temperature=0.001, do_sample=True, top_p=0.5, 
                                                 max_new_tokens=max_new_tokens, max_length=max_length) # llama: max_token_num=2048
                 finally:
                     if hooks is not None:
